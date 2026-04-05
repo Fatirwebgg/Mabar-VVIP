@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KING JOSE MABAR VVIP</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background: url('https://f.top4top.io/p_3747y5pc80.jpg') no-repeat center/cover;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+body::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+}
+
+.container {
+  position: relative;
+  z-index: 2;
+  width: 90%;
+  max-width: 400px;
+  background: rgba(0,0,0,0.6);
+  padding: 20px;
+  border-radius: 20px;
+  color: white;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 10px;
+  border: none;
+  background: gold;
+  cursor: pointer;
+}
+
+input, select {
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  border-radius: 10px;
+  border: none;
+}
+
+.queue, .admin {
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 10px;
+  max-height: 140px;
+  overflow-y: auto;
+  font-size: 13px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- AUDIO -->
+<audio id="bgm" autoplay loop>
+  <source src="http://k.top4top.io/m_3566uhjlz1.mp3" type="audio/mp3">
+</audio>
+
+<div class="container">
+
+<h2>KING JOSE MABAR VVIP👑</h2>
+
+<input type="text" id="nickname" placeholder="ID Account">
+
+<select id="role">
+  <option>Tank</option>
+  <option>Jungler</option>
+  <option>Marksman</option>
+  <option>Mage</option>
+  <option>Support</option>
+</select>
+
+<input type="file" id="bukti" accept="image/*">
+
+<button onclick="masukAntrian()">+ Masuk Antrian</button>
+<button onclick="toggleAdmin()">👑 Admin Panel</button>
+
+<div class="queue" id="queue"></div>
+<div class="admin" id="adminPanel" style="display:none;"></div>
+
+</div>
+
+<script>
+const WEBHOOK_URL = "https://discord.com/api/webhooks/1490320980038647850/NCc61jOi1OiJSvJrv8b2J1yvFIwUAIGw4fXkU8ZlMag1ypMAXUFo70F-XQLuKWMMEpGf";
+const ADMIN_ID = "<@1426943477081575615>";
+
+let antrian = [];
+
+// 🔊 FIX AUTOPLAY HP
+document.body.addEventListener("click", () => {
+  const audio = document.getElementById("bgm");
+  audio.play().catch(()=>{});
+});
+
+// masuk antrian
+function masukAntrian(){
+  const nama = document.getElementById("nickname").value;
+  const role = document.getElementById("role").value;
+  const file = document.getElementById("bukti").files[0];
+
+  if(!nama) return alert("Isi ID Account!");
+
+  const data = {
+    id: Date.now(),
+    nama,
+    role
+  };
+
+  antrian.push(data);
+
+  renderQueue();
+  renderAdmin();
+
+  kirimMasukDiscord(data, file);
+}
+
+// render queue
+function renderQueue(){
+  const q = document.getElementById("queue");
+  q.innerHTML = "<b>📋 Antrian:</b><br>";
+
+  antrian.forEach((p,i)=>{
+    let status = i < 5 ? "🎮 MAIN" : "⏳ ANTRI";
+    q.innerHTML += `${i+1}. ${p.nama} (${p.role}) - ${status}<br>`;
+  });
+}
+
+// render admin
+function renderAdmin(){
+  const admin = document.getElementById("adminPanel");
+  admin.innerHTML = "<b>👑 Admin Panel:</b><br>";
+
+  antrian.forEach((p,i)=>{
+    admin.innerHTML += `
+      ${i+1}. ${p.nama} (${p.role})
+      <button onclick="hapus(${p.id})">❌</button><br>
+    `;
+  });
+}
+
+// hapus player
+function hapus(id){
+  const data = antrian.find(p => p.id === id);
+  antrian = antrian.filter(p => p.id !== id);
+
+  renderQueue();
+  renderAdmin();
+
+  kirimHapusDiscord(data);
+}
+
+// kirim masuk
+function kirimMasukDiscord(data, file){
+  const posisi = antrian.length;
+  const status = posisi <= 5 ? "🎮 MAIN" : "⏳ ANTRI";
+
+  const formData = new FormData();
+
+  const payload = {
+    content: ADMIN_ID,
+    embeds: [{
+      title: "🔥 PLAYER MASUK",
+      color: 16766720,
+      fields: [
+        { name: "👤 Nickname", value: data.nama },
+        { name: "🎯 Role", value: data.role },
+        { name: "📊 Posisi", value: posisi.toString() },
+        { name: "📌 Status", value: status }
+      ],
+      footer: { text: "King Jose System" }
+    }]
+  };
+
+  formData.append("payload_json", JSON.stringify(payload));
+
+  if(file){
+    formData.append("file", file);
+  }
+
+  fetch(WEBHOOK_URL, { method: "POST", body: formData });
+}
+
+// kirim hapus
+function kirimHapusDiscord(data){
+  fetch(WEBHOOK_URL, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      embeds: [{
+        title: "❌ PLAYER DIHAPUS",
+        color: 16711680,
+        fields: [
+          { name: "👤 Nickname", value: data.nama },
+          { name: "🎯 Role", value: data.role }
+        ]
+      }]
+    })
+  });
+}
+
+// toggle admin
+function toggleAdmin(){
+  const p = document.getElementById("adminPanel");
+  p.style.display = p.style.display === "none" ? "block" : "none";
+}
+</script>
+
+</body>
+</html>
