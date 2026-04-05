@@ -61,6 +61,11 @@ input, select {
   overflow-y: auto;
   font-size: 13px;
 }
+
+.admin {
+  display: none;
+  border: 1px solid gold;
+}
 </style>
 </head>
 
@@ -73,7 +78,7 @@ input, select {
 
 <div class="container">
 
-<h2>KING JOSE MABAR VVIP👑</h2>
+<h2 id="title">KING JOSE MABAR VVIP👑</h2>
 
 <input type="text" id="nickname" placeholder="ID Account">
 
@@ -88,24 +93,67 @@ input, select {
 <input type="file" id="bukti" accept="image/*">
 
 <button onclick="masukAntrian()">+ Masuk Antrian</button>
-<button onclick="toggleAdmin()">👑 Admin Panel</button>
 
 <div class="queue" id="queue"></div>
-<div class="admin" id="adminPanel" style="display:none;"></div>
+<div class="admin" id="adminPanel"></div>
 
 </div>
 
 <script>
 const WEBHOOK_URL = "https://discord.com/api/webhooks/1490320980038647850/NCc61jOi1OiJSvJrv8b2J1yvFIwUAIGw4fXkU8ZlMag1ypMAXUFo70F-XQLuKWMMEpGf";
-const ADMIN_ID = "<@1426943477081575615>";
+const ADMIN_PASSWORD = "Fatir 1010";
 
 let antrian = [];
+let adminMode = false;
+let loginAttempts = 0;
 
-// 🔊 FIX AUTOPLAY HP
+// 🔊 autoplay fix HP
 document.body.addEventListener("click", () => {
-  const audio = document.getElementById("bgm");
-  audio.play().catch(()=>{});
+  document.getElementById("bgm").play().catch(()=>{});
 });
+
+// 🎯 SECRET ADMIN (tap 5x)
+let tapCount = 0;
+document.getElementById("title").addEventListener("click", ()=>{
+  tapCount++;
+  if(tapCount >= 5){
+    loginAdmin();
+    tapCount = 0;
+  }
+});
+
+// 🎯 PC shortcut
+document.addEventListener("keydown", function(e){
+  if(e.ctrlKey && e.shiftKey && e.key === "A"){
+    loginAdmin();
+  }
+
+  if(e.ctrlKey && e.shiftKey && e.key === "X"){
+    adminMode = false;
+    document.getElementById("adminPanel").style.display = "none";
+  }
+});
+
+// 🔐 LOGIN ADMIN (STEALTH)
+function loginAdmin(){
+  if(loginAttempts >= 3) return;
+
+  const pass = prompt("...");
+  
+  if(pass === ADMIN_PASSWORD){
+    adminMode = true;
+    document.getElementById("adminPanel").style.display = "block";
+    renderAdmin();
+
+    setTimeout(()=>{
+      adminMode = false;
+      document.getElementById("adminPanel").style.display = "none";
+    }, 300000);
+
+  } else {
+    loginAttempts++;
+  }
+}
 
 // masuk antrian
 function masukAntrian(){
@@ -124,12 +172,12 @@ function masukAntrian(){
   antrian.push(data);
 
   renderQueue();
-  renderAdmin();
+  if(adminMode) renderAdmin();
 
   kirimMasukDiscord(data, file);
 }
 
-// render queue
+// render user
 function renderQueue(){
   const q = document.getElementById("queue");
   q.innerHTML = "<b>📋 Antrian:</b><br>";
@@ -142,18 +190,20 @@ function renderQueue(){
 
 // render admin
 function renderAdmin(){
-  const admin = document.getElementById("adminPanel");
-  admin.innerHTML = "<b>👑 Admin Panel:</b><br>";
+  if(!adminMode) return;
+
+  const a = document.getElementById("adminPanel");
+  a.innerHTML = "<b>👑 PRIVATE PANEL</b><br>";
 
   antrian.forEach((p,i)=>{
-    admin.innerHTML += `
+    a.innerHTML += `
       ${i+1}. ${p.nama} (${p.role})
       <button onclick="hapus(${p.id})">❌</button><br>
     `;
   });
 }
 
-// hapus player
+// hapus
 function hapus(id){
   const data = antrian.find(p => p.id === id);
   antrian = antrian.filter(p => p.id !== id);
@@ -164,61 +214,48 @@ function hapus(id){
   kirimHapusDiscord(data);
 }
 
-// kirim masuk
+// kirim discord
 function kirimMasukDiscord(data, file){
   const posisi = antrian.length;
   const status = posisi <= 5 ? "🎮 MAIN" : "⏳ ANTRI";
 
   const formData = new FormData();
 
-  const payload = {
-    content: ADMIN_ID,
-    embeds: [{
-      title: "🔥 PLAYER MASUK",
-      color: 16766720,
-      fields: [
-        { name: "👤 Nickname", value: data.nama },
-        { name: "🎯 Role", value: data.role },
-        { name: "📊 Posisi", value: posisi.toString() },
-        { name: "📌 Status", value: status }
-      ],
-      footer: { text: "King Jose System" }
+  formData.append("payload_json", JSON.stringify({
+    content:"🔥 PLAYER MASUK",
+    embeds:[{
+      title:"King Jose",
+      fields:[
+        {name:"Nama",value:data.nama},
+        {name:"Role",value:data.role},
+        {name:"Posisi",value:posisi.toString()},
+        {name:"Status",value:status}
+      ]
     }]
-  };
+  }));
 
-  formData.append("payload_json", JSON.stringify(payload));
+  if(file) formData.append("file", file);
 
-  if(file){
-    formData.append("file", file);
-  }
-
-  fetch(WEBHOOK_URL, { method: "POST", body: formData });
+  fetch(WEBHOOK_URL,{method:"POST",body:formData});
 }
 
 // kirim hapus
 function kirimHapusDiscord(data){
-  fetch(WEBHOOK_URL, {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({
-      embeds: [{
-        title: "❌ PLAYER DIHAPUS",
-        color: 16711680,
-        fields: [
-          { name: "👤 Nickname", value: data.nama },
-          { name: "🎯 Role", value: data.role }
+  fetch(WEBHOOK_URL,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      embeds:[{
+        title:"❌ PLAYER DIHAPUS",
+        fields:[
+          {name:"Nama",value:data.nama},
+          {name:"Role",value:data.role}
         ]
       }]
     })
   });
 }
-
-// toggle admin
-function toggleAdmin(){
-  const p = document.getElementById("adminPanel");
-  p.style.display = p.style.display === "none" ? "block" : "none";
-}
 </script>
 
 </body>
-</html>
+  </html>
